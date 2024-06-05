@@ -1,4 +1,4 @@
-﻿namespace yt_transcript_bot.Models
+﻿namespace yt_transcript_api.Models
 {
     public class VideoDetails
     {
@@ -6,11 +6,11 @@
         public string errorId { get; set; }
         public string type { get; set; }
         public string id { get; set; }
-        public string title { get; set; }
+        public string title { get; set; }                   // назва відео
         public string description { get; set; }
-        public Channel channel { get; set; }
-        public int lengthSeconds { get; set; }
-        public int viewCount { get; set; }
+        public Channel channel { get; set; }                // назва каналу
+        public int lengthSeconds { get; set; }              // тривалість відео
+        public int viewCount { get; set; }                  // кількість переглядів
         public string publishedTimeText { get; set; }
         public bool isLiveStream { get; set; }
         public bool isLiveNow { get; set; }

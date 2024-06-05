@@ -1,9 +1,9 @@
-﻿using yt_transcript_bot.Models;
+﻿using yt_transcript_api.Models;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Web;
 
-namespace yt_transcript_bot.Clients
+namespace yt_transcript_api.Clients
 {
     public class SubtitlesClient
     {
@@ -22,12 +22,12 @@ namespace yt_transcript_bot.Clients
         }
 
         //                                                                                 IETF language tag  
-        public async Task<VideoDetails> GetVideoDetailsAsync(string videoId, string lang = "en-US")
+        public async Task<VideoDetails> GetVideoDetailsAsync(string videoId, string lang = Constants.DEFAULT_LOCALE)
         {
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri($"{_apiUrl}/v2/video/details?videoId={videoId}&lang={lang}&subtitles=true"), // &audios=false&subtitles=true&related=false"
+                RequestUri = new Uri($"{_apiUrl}/v2/video/details?videoId={videoId}&lang={lang}&audios=false&subtitles=true&related=false"), // &audios=false&subtitles=true&related=false"
                 Headers =
                 {
                     { "X-RapidAPI-Key", _apiKey },
@@ -46,14 +46,14 @@ namespace yt_transcript_bot.Clients
 
         // отримати субтитри за посиланням з об'єкту VideoDetails (subtitleUrl = VideoDetails.Subtitles.items[i].url;
         //                                                         targetLang - мова перекладу (IETF language tag);
-        //                                                         "" - мова оригіналу (непідтримувана мова - видасть оригінал))
-        public async Task<SubtitleItem[]> GetSubtitleItemAsync(string subtitleUrl, string targetLang = "", string format = "json") 
+        //                                                         "" - мова оригіналу (непідтримувана мова - апі видасть оригінал))
+        public async Task<SubtitleItem[]> GetSubtitleItemJSONAsync(string subtitleUrl, string targetLang = "") 
         {            
             subtitleUrl = HttpUtility.UrlEncode(subtitleUrl); // URL-кодування для правильної передачі посилання
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri($"{_apiUrl}/v2/video/subtitles?subtitleUrl={subtitleUrl}&format={format}&fixOverlap=true&targetLang={targetLang}"),
+                RequestUri = new Uri($"{_apiUrl}/v2/video/subtitles?subtitleUrl={subtitleUrl}&format=json&fixOverlap=true&targetLang={targetLang}"),
                 Headers =
                 {
                     { "X-RapidAPI-Key", _apiKey },
@@ -66,6 +66,29 @@ namespace yt_transcript_bot.Clients
                 var body = await response.Content.ReadAsStringAsync();
                 Console.WriteLine("\n==================== Subtitles ====================\n\n" + body);
                 var result = JsonConvert.DeserializeObject<SubtitleItem[]>(body);
+                return result;
+            }
+        }
+
+        public async Task<string> GetSubtitleItemSRTAsync(string subtitleUrl, string targetLang = "")
+        {
+            subtitleUrl = HttpUtility.UrlEncode(subtitleUrl); // URL-кодування для правильної передачі посилання
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri($"{_apiUrl}/v2/video/subtitles?subtitleUrl={subtitleUrl}&format=srt&fixOverlap=true&targetLang={targetLang}"),
+                Headers =
+                {
+                    { "X-RapidAPI-Key", _apiKey },
+                    { "X-RapidAPI-Host", _apiHost },
+                },
+            };
+            using (var response = await _httpClient.SendAsync(request))
+            {
+                response.EnsureSuccessStatusCode();
+                var body = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("\n==================== Subtitles ====================\n\n" + body);
+                var result = body;
                 return result;
             }
         }

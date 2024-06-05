@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "yt_transcript_bot": {
+    "yt_transcript_api": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

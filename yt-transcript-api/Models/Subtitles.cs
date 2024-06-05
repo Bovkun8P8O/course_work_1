@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace yt_transcript_bot.Models
+namespace yt_transcript_api.Models
 {
     public class Subtitles
     {
