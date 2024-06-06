@@ -382,15 +382,15 @@ namespace CaptionsBot
 
                 // створення файлу з субтитрами
                 string subsFormat = (format == "JSON") ? "just_text" : "with_timestamps";
-                string fileName = $"subtitles_{videoId}_{lang}_{targetLang}_{subsFormat}.txt"; // шлях до файлу у константи, коли ясно буде, чи на хості, чи без нього
-                string filePath = $"YTCaptionsFiles/{message.Chat.Id}/{fileName}"; // %userprofile%\Documents\GitHub\CaptionsBot\bin\Debug\net6.0\YTCaptionsFiles
+                string fileName = $"subtitles_{videoId}_{lang}_{targetLang}_{subsFormat}.txt"; 
+                string filePath = $"../../../YTCaptionsFiles/{message.Chat.Id}/{fileName}"; 
                 await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: "Creating file...",
                     cancellationToken: cancellationToken);
                 try
                 {
-                    System.IO.Directory.CreateDirectory($"YTCaptionsFiles/{message.Chat.Id}");
+                    System.IO.Directory.CreateDirectory($"../../../YTCaptionsFiles/{message.Chat.Id}");
                     System.IO.File.WriteAllText(filePath, response);
 
                     using (Stream stream = System.IO.File.OpenRead(filePath))
@@ -437,7 +437,6 @@ namespace CaptionsBot
 
                 try
                 {
-                    // PUT: Subtitles/PutSubtitles/?userId=userId&videoId=videoId&lang=lang&targetLang=targetLang&fileType=fileType
                     var request = new HttpRequestMessage
                     {
                         Method = HttpMethod.Put,
@@ -471,14 +470,14 @@ namespace CaptionsBot
                 // створення файлу з субтитрами
                 string subsFormat = (format == "json") ? "just_text" : "with_timestamps";
                 string fileName = $"subtitles_{videoId}_{lang}_{targetLang}_{subsFormat}.txt";
-                string filePath = $"YTCaptionsFiles/{message.Chat.Id}/{fileName}";                      // змінити шлях
+                string filePath = $"../../../YTCaptionsFiles/{message.Chat.Id}/{fileName}";                      
                 await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: "Creating file...",
                     cancellationToken: cancellationToken);
                 try
                 {
-                    System.IO.Directory.CreateDirectory($"YTCaptionsFiles/{message.Chat.Id}");
+                    System.IO.Directory.CreateDirectory($"../../../YTCaptionsFiles/{message.Chat.Id}");
                     System.IO.File.WriteAllText(filePath, response);
 
                     _userStates[message.Chat.Id] = "waiting for subs update status";                   // зміна стану
@@ -521,7 +520,7 @@ namespace CaptionsBot
                     var request = new HttpRequestMessage
                     {
                         Method = HttpMethod.Delete,
-                        RequestUri = new Uri($"{_apiUrl}/Subtitles/DeleteUsageHistory/?userID={id}&username={username}"), // message.Chat.Id   message.Chat.Id
+                        RequestUri = new Uri($"{_apiUrl}/Subtitles/DeleteUsageHistory/?userID={id}&username={username}"), 
                     };
                     Console.WriteLine("Sent DELETE request.");
 
@@ -564,7 +563,6 @@ namespace CaptionsBot
                 return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: usage,
-                    //replyMarkup: new ReplyKeyboardRemove(),
                     cancellationToken: cancellationToken);
             }
 
