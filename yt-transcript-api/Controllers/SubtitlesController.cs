@@ -101,7 +101,7 @@ namespace yt_transcript_api.Controllers
             SubtitlesClient subtitlesClient = new SubtitlesClient();
             videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result; 
             string text = "";
-            for (int i = 0; i < videoDetails.subtitles.items.Length; i++) // список посилань, кожне з яких містить список субтитрів
+            for (int i = 0; i < videoDetails.subtitles.items?.Length; i++) // список посилань, кожне з яких містить список субтитрів
             {
                 string subtitleUrl = videoDetails.subtitles.items[i].url;
                 string subtitleItem = subtitlesClient.GetSubtitleItemSRTAsync(subtitleUrl, targetLang).Result;
@@ -125,7 +125,7 @@ namespace yt_transcript_api.Controllers
             SubtitlesClient subtitlesClient = new SubtitlesClient();
             videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
             List<Subtitles> subtitles = new List<Subtitles>(); 
-            for (int i = 0; i < videoDetails.subtitles.items.Length; i++)
+            for (int i = 0; i < videoDetails.subtitles.items?.Length; i++)
             {
                 string subtitleUrl = videoDetails.subtitles.items[i].url;
                 var subtitleItem = new Subtitles();
@@ -162,7 +162,7 @@ namespace yt_transcript_api.Controllers
 
             if (fileType == "srt")
             {
-                for (int i = 0; i < videoDetails.subtitles.items.Length; i++) // список посилань, кожне з яких містить список субтитрів
+                for (int i = 0; i < videoDetails.subtitles.items?.Length; i++) // список посилань, кожне з яких містить список субтитрів
                 {
                     string subtitleUrl = videoDetails.subtitles.items[i].url;
                     string subtitleItem = subtitlesClient.GetSubtitleItemSRTAsync(subtitleUrl, targetLang).Result;
@@ -174,7 +174,7 @@ namespace yt_transcript_api.Controllers
             else if (fileType == "json")
             {
                 List<Subtitles> subtitles = new List<Subtitles>(); 
-                for (int i = 0; i < videoDetails.subtitles.items.Length; i++) // список посилань, кожне з яких містить список субтитрів
+                for (int i = 0; i < videoDetails.subtitles.items?.Length; i++) // список посилань, кожне з яких містить список субтитрів
                 {
                     string subtitleUrl = videoDetails.subtitles.items[i].url;
                     var subtitleItem = new Subtitles();
