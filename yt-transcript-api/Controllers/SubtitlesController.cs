@@ -11,17 +11,18 @@ namespace yt_transcript_api.Controllers
     public class SubtitlesController : ControllerBase
     {
         private readonly ILogger<SubtitlesController> _logger;
+        protected static Dictionary<long, VideoDetails> _usersVideoDetails = new Dictionary<long, VideoDetails>();
 
         public SubtitlesController(ILogger<SubtitlesController> logger)
         {
             _logger = logger;
         }
 
-        // GET: Subtitles/GetVideoName?videoId=videoId
+        // GET: Subtitles/GetVideoName?userId=userId&videoId=videoId&lang=lang
         [HttpGet]
-        [ActionName("GetVideoName")] // отримати назву відео з об'єкту VideoDetails
-                                     //(використати перед завантаженням субтитрів для перевірки правильності введення коду користувачем)
-        public string GetVideoName(string videoId/*, string lang = "en-US"*/)
+        [ActionName("GetVideoName")] // отримати об'єкт VideoDetails та відправити назву, автора, тривалість і перегляди відео 
+                                     // (використати перед завантаженням субтитрів для перевірки правильності введення коду користувачем)
+        public string GetVideoName(long userId, string videoId, string lang = Constants.DEFAULT_LOCALE)
         {
             bool isVideoIdValid = false;
             /* варіанти посилань:
@@ -30,7 +31,7 @@ namespace yt_transcript_api.Controllers
             https://youtu.be/videoId
             https://www.youtube.com/v/videoId
             https://www.youtube.com/embed/videoId */
-            
+
             string VideoID = "";
             if (videoId.Length == 11)
             {
@@ -55,7 +56,7 @@ namespace yt_transcript_api.Controllers
                     VideoID = videoId.Substring(videoId.IndexOf("youtube.com/embed/") + 17, 11);
                 }
             }
-            
+
             // перевірка відповіді на запит з отриманим videoId
             var url = $"https://www.youtube.com/watch?v={VideoID}";
             //var url = $"http://gdata.youtube.com/feeds/api/videos/{VideoID}"; // не працює, бо api v2 застаріле
@@ -78,7 +79,16 @@ namespace yt_transcript_api.Controllers
                     //string responseString = "ID is valid."; // для економної перевірки зв'язку з ботом
                     VideoDetails videoDetails = new VideoDetails();
                     SubtitlesClient subtitlesClient = new SubtitlesClient();
-                    videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId).Result;
+                    videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
+                    if (!_usersVideoDetails.ContainsKey(userId))
+                    {
+                        _usersVideoDetails.Add(userId, videoDetails);
+                    }
+                    else
+                    {
+                        _usersVideoDetails[userId] = videoDetails;
+                    }
+                    
                     string duration = TimeSpan.FromSeconds(videoDetails.lengthSeconds).ToString(@"hh\:mm\:ss");
                     string responseString = $"Title: {videoDetails.title}\nChannel: {videoDetails.channel.name}\nDuration: {duration}\nViews: {videoDetails.viewCount}";
                     return responseString;
@@ -95,11 +105,18 @@ namespace yt_transcript_api.Controllers
         // POST: Subtitles/PostSubtitlesSRT?userId=userId&videoId=videoId&lang=lang&targetLang=targetLang
         [HttpPost]
         [ActionName("PostSubtitlesSRT")] // варіант "з відмітками часу"
-        public string PostSubtitlesWithTimestamps(long userId, string videoId, string lang = Constants.DEFAULT_LOCALE, string targetLang = "en-US") 
+        public string PostSubtitlesWithTimestamps(long userId, string videoId, string lang = Constants.DEFAULT_LOCALE, string targetLang = "en-US")
         {
             VideoDetails videoDetails = new VideoDetails(); // потрібні для отримання масиву посилань на субтитри
             SubtitlesClient subtitlesClient = new SubtitlesClient();
-            videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result; 
+            if (_usersVideoDetails.ContainsKey(userId))
+            {
+                videoDetails = _usersVideoDetails[userId];
+            }
+            else
+            {
+                videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
+            }
             string text = "";
             for (int i = 0; i < videoDetails.subtitles.items?.Length; i++) // список посилань, кожне з яких містить список субтитрів
             {
@@ -109,9 +126,9 @@ namespace yt_transcript_api.Controllers
             }
 
             Captions captions = new Captions();
-            if (text.Length == 0) text = $"No subtitles found for ID {videoId}."; 
+            if (text.Length == 0) text = $"No subtitles found for ID {videoId}.";
             DateTime date = DateTime.Now;
-            captions.InsertCaptions(userId.ToString(), videoId, lang, targetLang, text, date); 
+            captions.InsertCaptions(userId.ToString(), videoId, lang, targetLang, text, date);
             return text;
         }
 
@@ -123,8 +140,15 @@ namespace yt_transcript_api.Controllers
         {
             VideoDetails videoDetails = new VideoDetails(); // потрібні для отримання посилань на субтитри
             SubtitlesClient subtitlesClient = new SubtitlesClient();
-            videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
-            List<Subtitles> subtitles = new List<Subtitles>(); 
+            if (_usersVideoDetails.ContainsKey(userId))
+            {
+                videoDetails = _usersVideoDetails[userId];
+            }
+            else
+            {
+                videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
+            }
+            List<Subtitles> subtitles = new List<Subtitles>();
             for (int i = 0; i < videoDetails.subtitles.items?.Length; i++)
             {
                 string subtitleUrl = videoDetails.subtitles.items[i].url;
@@ -145,7 +169,7 @@ namespace yt_transcript_api.Controllers
             if (text.Length == 0) text = $"No subtitles found for ID {videoId}.";
             Captions captions = new Captions();
             DateTime date = DateTime.Now;
-            captions.InsertCaptions(userId.ToString(), videoId, lang, targetLang, text, date); 
+            captions.InsertCaptions(userId.ToString(), videoId, lang, targetLang, text, date);
             return text;
         }
 
@@ -153,11 +177,18 @@ namespace yt_transcript_api.Controllers
         // PUT: Subtitles/PutSubtitles/?userId=userId&videoId=videoId&lang=lang&targetLang=targetLang&fileType=fileType
         [HttpPut]
         [ActionName("PutSubtitles")] // заміна останніх субтитрів з обраного відео на нові
-        public string PutSubtitles(long userId, string videoId, string lang = Constants.DEFAULT_LOCALE, string targetLang = "en-US", string fileType = "json") 
+        public string PutSubtitles(long userId, string videoId, string lang = Constants.DEFAULT_LOCALE, string targetLang = "en-US", string fileType = "json")
         {
             VideoDetails videoDetails = new VideoDetails(); // потрібні для отримання посилань на субтитри
             SubtitlesClient subtitlesClient = new SubtitlesClient();
-            videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
+            if (_usersVideoDetails.ContainsKey(userId))
+            {
+                videoDetails = _usersVideoDetails[userId];
+            }
+            else
+            {
+                videoDetails = subtitlesClient.GetVideoDetailsAsync(videoId, lang).Result;
+            }
             string text = "";
 
             if (fileType == "srt")
@@ -173,7 +204,7 @@ namespace yt_transcript_api.Controllers
             }
             else if (fileType == "json")
             {
-                List<Subtitles> subtitles = new List<Subtitles>(); 
+                List<Subtitles> subtitles = new List<Subtitles>();
                 for (int i = 0; i < videoDetails.subtitles.items?.Length; i++) // список посилань, кожне з яких містить список субтитрів
                 {
                     string subtitleUrl = videoDetails.subtitles.items[i].url;
@@ -196,7 +227,7 @@ namespace yt_transcript_api.Controllers
 
             Captions captions = new Captions();
             DateTime date = DateTime.Now;
-            captions.UpdateCaptions(userId.ToString(), videoId, lang, targetLang, text, date); 
+            captions.UpdateCaptions(userId.ToString(), videoId, lang, targetLang, text, date);
             return text; // "Put method: " + 
         }
 

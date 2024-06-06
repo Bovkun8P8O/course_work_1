@@ -250,7 +250,7 @@ namespace CaptionsBot
                     var request = new HttpRequestMessage
                     {
                         Method = HttpMethod.Get,
-                        RequestUri = new Uri($"{_apiUrl}/Subtitles/GetVideoName/?videoId={videoID}"),
+                        RequestUri = new Uri($"{_apiUrl}/Subtitles/GetVideoName/?userId={message.Chat.Id}&videoId={videoID}&lang={Constants.DEFAULT_LOCALE}"),
                     };
                     Console.WriteLine("Sent GET request.");
 
